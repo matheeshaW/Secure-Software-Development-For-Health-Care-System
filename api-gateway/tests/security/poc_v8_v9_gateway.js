@@ -53,7 +53,7 @@ function request(options, data = null) {
 
 async function runSecurityPoC() {
   console.log("===============================================================");
-  console.log("🔒 SE4030 SECURE SOFTWARE DEVELOPMENT — GATEWAY SECURITY PoC");
+  console.log(" SE4030 SECURE SOFTWARE DEVELOPMENT — GATEWAY SECURITY PoC");
   console.log("   Vulnerabilities: V8 (Misconfiguration) & V9 (No Rate Limiting)");
   console.log("===============================================================\n");
 
@@ -120,7 +120,7 @@ async function runSecurityPoC() {
     console.log(`[*] Response Access-Control-Allow-Origin: ${allowOrigin || "(none)"}`);
 
     if (allowOrigin === "*" || allowOrigin === "https://malicious-attacker-domain.org") {
-      console.log("❌ VULNERABLE: Gateway permits unauthorized/wildcard origins!");
+      console.log(" VULNERABLE: Gateway permits unauthorized/wildcard origins!");
       results.push({
         id: "V8.1",
         name: "Permissive CORS Policy",
@@ -130,7 +130,7 @@ async function runSecurityPoC() {
         detail: `Wildcard or reflected origin allowed: ${allowOrigin}`,
       });
     } else {
-      console.log("✅ PROTECTED: Origin rejected or whitelisted.");
+      console.log("PROTECTED: Origin rejected or whitelisted.");
       results.push({
         id: "V8.1",
         name: "Permissive CORS Policy",
@@ -161,7 +161,7 @@ async function runSecurityPoC() {
     console.log(`[*] Present Headers: ${Object.keys(headerRes.headers).join(", ")}`);
 
     if (missingHeaders.length > 0) {
-      console.log(`❌ VULNERABLE: Missing critical defense-in-depth headers: ${missingHeaders.join(", ")}`);
+      console.log(` VULNERABLE: Missing critical defense-in-depth headers: ${missingHeaders.join(", ")}`);
       results.push({
         id: "V8.2",
         name: "Missing Security Headers (No Helmet)",
@@ -171,7 +171,7 @@ async function runSecurityPoC() {
         detail: `Missing: ${missingHeaders.join(", ")}`,
       });
     } else {
-      console.log("✅ PROTECTED: All core security headers present.");
+      console.log("PROTECTED: All core security headers present.");
       results.push({
         id: "V8.2",
         name: "Missing Security Headers",
@@ -198,7 +198,7 @@ async function runSecurityPoC() {
     // (It might return 502 because mock service is offline, but 502 means auth passed!)
     if (tokenQueryRes.statusCode !== 401) {
       console.log(`[*] Status Code returned: ${tokenQueryRes.statusCode}`);
-      console.log("❌ VULNERABLE: Gateway accepts sensitive authentication tokens via URL query parameters!");
+      console.log(" VULNERABLE: Gateway accepts sensitive authentication tokens via URL query parameters!");
       console.log("    Risk: Token is recorded in proxy logs, browser history, and leaked via HTTP Referer.");
       results.push({
         id: "V8.3",
@@ -209,7 +209,7 @@ async function runSecurityPoC() {
         detail: `Accepted query parameter token (Status ${tokenQueryRes.statusCode} instead of 401)`,
       });
     } else {
-      console.log("✅ PROTECTED: Query parameter tokens rejected with 401 Unauthorized.");
+      console.log("PROTECTED: Query parameter tokens rejected with 401 Unauthorized.");
       results.push({
         id: "V8.3",
         name: "JWT Token in URL Query String",
@@ -244,7 +244,7 @@ async function runSecurityPoC() {
     console.log(`[*] Requests rate-limited (HTTP 429): ${throttledCount}`);
 
     if (throttledCount === 0) {
-      console.log("❌ VULNERABLE: No rate limiting detected! 100% of burst requests processed.");
+      console.log(" VULNERABLE: No rate limiting detected! 100% of burst requests processed.");
       console.log("    Risk: Automated credential stuffing, password brute-forcing, and DoS attacks.");
       results.push({
         id: "V9",
@@ -255,7 +255,7 @@ async function runSecurityPoC() {
         detail: `0/${BURST_COUNT} requests rate-limited (HTTP 429 expected)`,
       });
     } else {
-      console.log(`✅ PROTECTED: Rate limiter triggered! Blocked ${throttledCount} excessive requests.`);
+      console.log(` PROTECTED: Rate limiter triggered! Blocked ${throttledCount} excessive requests.`);
       results.push({
         id: "V9",
         name: "Missing API Gateway Rate Limiting",
@@ -273,7 +273,7 @@ async function runSecurityPoC() {
    * SUMMARY MATRIX
    * ------------------------------------------------------------- */
   console.log("===============================================================");
-  console.log("📋 PoC EXECUTION SUMMARY TABLE (PRE-REMEDIATION BASELINE)");
+  console.log(" PoC EXECUTION SUMMARY TABLE (PRE-REMEDIATION BASELINE)");
   console.log("===============================================================");
   console.table(results);
   console.log("===============================================================\n");
