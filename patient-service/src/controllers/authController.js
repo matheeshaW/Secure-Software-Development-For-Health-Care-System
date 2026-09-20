@@ -2,66 +2,119 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// REGISTER
+// Helper function to sanitize user object and strip sensitive password hash
+const sanitizeUser = (userDoc) => {
+  const user = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
+  const { password, ...safeUser } = user;
+  return safeUser;
+};
+
+// Dummy bcrypt hash used to normalize timing during failed email lookups
+const TIMING_NORMALIZATION_HASH = "$2a$10$wT8mQyFv5vQW6lXgD5iVdeL8gXQeW1zF9mYqV7uT9aP0sR2dF4k6e";
+
+// REGISTER (Public Self-Registration - Strictly Enforces 'patient' Role)
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    // Whitelist allowed fields from req.body; completely ignore any supplied 'role'
+    const { name, email, password, phone } = req.body;
 
-    const allowedRoles = ["patient", "doctor", "admin"];
-    if (role && !allowedRoles.includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email, and password are required"
+      });
     }
 
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long"
+      });
+    }
+
+    // Security Control (CWE-269 / CWE-915): Prevent Privilege Escalation via Mass Assignment
+    // Public self-registration is strictly restricted to 'patient'.
+    // Elevated roles (doctor, admin) must be provisioned via admin endpoints.
+    const role = "patient";
+
+    const normalizedEmail = String(email).trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: String(name).trim(),
+      email: normalizedEmail,
       password: hashedPassword,
+      phone: phone ? String(phone).trim() : undefined,
       role,
     });
 
-    res.json({ success: true, user });
+    // Security Control (CWE-200): Strip password hash from response
+    res.status(201).json({
+      success: true,
+      message: "Registration successful",
+      user: sanitizeUser(user)
+    });
   } catch (err) {
-    // Handle duplicate email error (check both keyPattern and keyValue for compatibility)
+    // Handle duplicate email error
     if (err.code === 11000 && (err.keyPattern?.email || err.keyValue?.email)) {
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(400).json({ success: false, message: "Email already exists" });
     }
     // Handle validation errors
     if (err.name === "ValidationError") {
       const messages = Object.values(err.errors).map((e) => e.message);
-      return res.status(400).json({ message: messages.join(", ") });
+      return res.status(400).json({ success: false, message: messages.join(", ") });
     }
-    res.status(500).json({ message: "Server error: " + err.message });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 };
 
-// LOGIN
+// LOGIN (Hardened against User Enumeration & Password Hash Leak)
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required"
+      });
+    }
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    // Security Control (CWE-204): Mitigate User Enumeration Timing Oracle
+    if (!user) {
+      // Execute dummy bcrypt comparison to neutralize response timing discrepancy
+      await bcrypt.compare(password, TIMING_NORMALIZATION_HASH);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" },
+      { expiresIn: "1d" }
     );
 
-    res.json({
+    // Security Control (CWE-200): Strip password hash from response
+    res.status(200).json({
       success: true,
       token,
-      user,
+      user: sanitizeUser(user),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error: " + err.message });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 };
