@@ -3,11 +3,36 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const helmet = require("helmet");
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+/* ================= SECURITY HEADERS (V8.2 - CWE-693) ================= */
+app.use(helmet());
+
+/* ================= STRICT CORS POLICY (V8.1 - CWE-942) ================= */
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false); // Reject unauthorized origin
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-user"],
+  }),
+);
 
 const requiredEnvVars = [
   "PATIENT_SERVICE_URL",
@@ -24,26 +49,29 @@ const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
 if (missingVars.length > 0) {
   console.error(
-    `❌ FATAL: Required environment variables are missing: ${missingVars.join(", ")}`,
+    `[ERROR] FATAL: Required environment variables are missing: ${missingVars.join(", ")}`,
   );
   process.exit(1);
 }
 
-/* ================= AUTH MIDDLEWARE ================= */
+/* ================= AUTH MIDDLEWARE (V8.3 - CWE-598/CWE-200) ================= */
 const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const queryToken = typeof req.query?.token === "string" ? req.query.token : "";
-
-  if (!authHeader && !queryToken) {
-    return res.status(401).json({ message: "No token" });
+  // Security Fix (V8.3): Disallow sensitive authentication tokens in URL query strings
+  if (req.query?.token) {
+    return res.status(401).json({
+      message:
+        "Insecure token transport: authentication tokens in URL query parameters are rejected. Pass via Authorization header.",
+    });
   }
 
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.split(" ")[1]
-    : queryToken;
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "No token provided" });
+  }
 
+  const token = authHeader.split(" ")[1];
   if (!token) {
-    return res.status(401).json({ message: "No token" });
+    return res.status(401).json({ message: "No token provided" });
   }
 
   try {
