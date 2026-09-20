@@ -85,7 +85,7 @@ function runAudit() {
   }
 
   if (findingsCount > 0) {
-    console.error(`❌ VULNERABILITY DETECTED: Found ${findingsCount} instance(s) of hardcoded secrets!\n`);
+    console.error(`[ALERT] VULNERABILITY DETECTED: Found ${findingsCount} instance(s) of hardcoded secrets!\n`);
     findings.forEach((f, idx) => {
       console.error(`[Finding #${idx + 1}] [${f.severity}] ${f.rule} (${f.cwe})`);
       console.error(`   File: ${f.file}:${f.line}`);
@@ -94,7 +94,7 @@ function runAudit() {
     console.error('RESULT: FAILED - Secrets must be extracted to environment variables and .env templates.\n');
     return false;
   } else {
-    console.log('✅ PASS: No hardcoded secrets or cloud credentials found in monitored files.');
+    console.log('[PASS] No hardcoded secrets or cloud credentials found in monitored files.');
     return true;
   }
 }
