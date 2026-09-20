@@ -5,7 +5,7 @@
 - **OWASP Category**: A02:2021 – Cryptographic Failures & A05:2021 – Security Misconfiguration
 - **CVSS v3.1 Score**: 9.8 (Critical) `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`
 - **Owner**: Member 2 (Patient Domain Security & Threat Modeling Lead)
-- **Status**: ✅ REMEDIATED & VERIFIED
+- **Status**: [STATUS: REMEDIATED & VERIFIED]
 
 ---
 
@@ -56,7 +56,7 @@ RESULT: FAILED
   Target Scope: Microservices Configs & Source Files       
 ===========================================================
 
-✅ PASS: No hardcoded secrets or cloud credentials found in monitored files.
+[PASS] No hardcoded secrets or cloud credentials found in monitored files.
 ```
 
 ---
