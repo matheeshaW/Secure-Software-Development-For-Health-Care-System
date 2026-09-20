@@ -62,7 +62,7 @@ function analyzeAuthControllerSource() {
   }
 
   if (issues.length > 0) {
-    console.error(`❌ VULNERABILITIES DETECTED: Found ${issues.length} authentication security issue(s):\n`);
+    console.error(`[ALERT] VULNERABILITIES DETECTED: Found ${issues.length} authentication security issue(s):\n`);
     issues.forEach((issue, idx) => {
       console.error(`[Flaw #${idx + 1}] [${issue.cwe}] ${issue.name}`);
       console.error(`   ${issue.detail}\n`);
@@ -70,7 +70,7 @@ function analyzeAuthControllerSource() {
     console.error('RESULT: FAILED - authController.js must be remediated.\n');
     return false;
   } else {
-    console.log('✅ PASS: All authentication security controls verified:');
+    console.log('[PASS] All authentication security controls verified:');
     console.log('   - Role self-assignment blocked (enforced default: patient)');
     console.log('   - Password hashes sanitized from all authentication responses');
     console.log('   - User enumeration eliminated with unified 401 error response');
