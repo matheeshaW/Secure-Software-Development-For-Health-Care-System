@@ -12,7 +12,7 @@
   - Sensitive Data Exposure: 7.5 (High) `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N`
   - User Enumeration: 5.3 (Medium) `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`
 - **Owner**: Member 2 (Patient Domain Security & Threat Modeling Lead)
-- **Status**: ✅ REMEDIATED & VERIFIED
+- **Status**: [STATUS: REMEDIATED & VERIFIED]
 
 ---
 
@@ -63,7 +63,7 @@
   Target: patient-service/src/controllers/authController.js      
 ================================================================
 
-❌ VULNERABILITIES DETECTED: Found 3 authentication security issue(s):
+[ALERT] VULNERABILITIES DETECTED: Found 3 authentication security issue(s):
 
 [Flaw #1] [CWE-269 / CWE-915] Privilege Escalation via Mass Assignment
    Public registration allows req.body.role = "admin", granting root platform privileges to unauthenticated users.
@@ -84,7 +84,7 @@ RESULT: FAILED - authController.js must be remediated.
   Target: patient-service/src/controllers/authController.js      
 ================================================================
 
-✅ PASS: All authentication security controls verified:
+[PASS] All authentication security controls verified:
    - Role self-assignment blocked (enforced default: patient)
    - Password hashes sanitized from all authentication responses
    - User enumeration eliminated with unified 401 error response
