@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 
@@ -33,6 +34,33 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "x-user"],
   }),
 );
+
+/* ================= RATE LIMITING (V9 - CWE-770) ================= */
+// Global limiter: 200 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many requests from this IP, please try again after 15 minutes.",
+  },
+});
+app.use(globalLimiter);
+
+// Strict Auth limiter: 15 requests per 15 minutes per IP (mitigates credential stuffing and brute force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many authentication attempts, please try again after 15 minutes.",
+  },
+});
+app.use("/api/auth", authLimiter);
 
 const requiredEnvVars = [
   "PATIENT_SERVICE_URL",
