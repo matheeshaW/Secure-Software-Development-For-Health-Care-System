@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAppointments from "./pages/admin/AdminAppointments";
 import UserList from "./pages/admin/UserList";
 import DoctorVerification from "./pages/admin/DoctorVerification";
+import GoogleCallback from "./pages/GoogleCallback";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
         {/* Redirects */}
         <Route path="/profile" element={<Navigate to="/patient/profile" replace />} />
