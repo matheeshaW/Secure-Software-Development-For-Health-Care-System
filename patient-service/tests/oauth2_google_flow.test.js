@@ -156,8 +156,21 @@ async function runTests() {
     };
 
     // Set test env and JWT_SECRET
-    process.env.NODE_ENV = "development";
+    process.env.NODE_ENV = "test";
     process.env.JWT_SECRET = process.env.JWT_SECRET || "test_jwt_secret_key_12345";
+
+    // Stub verifyIdToken on OAuth2Client prototype for isolated unit test
+    const { OAuth2Client } = require("google-auth-library");
+    const origVerify = OAuth2Client.prototype.verifyIdToken;
+    OAuth2Client.prototype.verifyIdToken = async () => ({
+      getPayload: () => ({
+        sub: "google_sub_1234567890",
+        email: testEmail,
+        name: "Test Patient",
+        email_verified: true,
+        picture: "https://lh3.googleusercontent.com/a/default-user",
+      }),
+    });
 
     // Mock User model methods if MongoDB is not connected
     const origFindOne = User.findOne;
@@ -172,6 +185,7 @@ async function runTests() {
     await googleAuth(mockReq, mockRes);
 
     // Restore original methods
+    OAuth2Client.prototype.verifyIdToken = origVerify;
     User.findOne = origFindOne;
     User.create = origCreate;
 

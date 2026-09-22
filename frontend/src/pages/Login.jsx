@@ -224,41 +224,17 @@ function Login() {
       setError("");
       setGoogleLoading(true);
       const res = await API.get("/auth/google/url");
-      // If GOOGLE_CLIENT_ID is not yet configured in .env:
-      if (!res.data?.url || res.data.url.includes("client_id=&") || !res.data.url.includes("client_id=")) {
-        if (import.meta.env.DEV) {
-          const mockResult = await googleLogin({
-            credential: "mock_google_token_dr.john.smith@medicare-health.lk"
-          });
-          if (mockResult.user?.role === "patient") {
-            navigate("/patient/dashboard");
-          } else {
-            navigate("/home");
-          }
-          return;
-        } else {
-          setError("Google Sign-In is not configured. Missing client ID.");
-          return;
-        }
+      if (res.data && res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        throw new Error("Failed to generate Google authorization URL.");
       }
-      window.location.href = res.data.url;
     } catch (err) {
-      if (import.meta.env.DEV) {
-        try {
-          const mockResult = await googleLogin({
-            credential: "mock_google_token_dr.john.smith@medicare-health.lk"
-          });
-          if (mockResult.user?.role === "patient") {
-            navigate("/patient/dashboard");
-          } else {
-            navigate("/home");
-          }
-          return;
-        } catch {
-          // Fall through
-        }
-      }
-      setError(err?.response?.data?.message || err.message || "Failed to initiate Google sign-in.");
+      setError(
+        err?.response?.data?.message ||
+        err.message ||
+        "Failed to initiate Google sign-in."
+      );
     } finally {
       setGoogleLoading(false);
     }

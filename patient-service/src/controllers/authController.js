@@ -97,22 +97,10 @@ exports.googleAuth = async (req, res) => {
         });
         payload = ticket.getPayload();
       } catch (verifyErr) {
-        // Development and evaluation test token support
-        if (process.env.NODE_ENV !== "production" && credential.startsWith("mock_google_token_")) {
-          const testEmail = credential.replace("mock_google_token_", "");
-          payload = {
-            sub: "google_sub_" + Buffer.from(testEmail).toString("hex").slice(0, 16),
-            email: testEmail,
-            name: testEmail.split("@")[0].replace(".", " "),
-            email_verified: true,
-            picture: "https://lh3.googleusercontent.com/a/default-user",
-          };
-        } else {
-          return res.status(401).json({
-            success: false,
-            message: "Invalid or unverified Google ID Token: " + verifyErr.message
-          });
-        }
+        return res.status(401).json({
+          success: false,
+          message: "Invalid or unverified Google ID Token: " + verifyErr.message
+        });
       }
     } else if (code) {
       // Flow 2: OAuth 2.0 Authorization Code Grant Exchange
