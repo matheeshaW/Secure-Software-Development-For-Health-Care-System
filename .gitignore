@@ -1,3 +1,5 @@
 node_modules
 .env
 Zfiles
+docker-compose.override.yml
+*.override.yml
