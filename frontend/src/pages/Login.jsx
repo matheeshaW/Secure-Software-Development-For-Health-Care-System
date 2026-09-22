@@ -224,33 +224,41 @@ function Login() {
       setError("");
       setGoogleLoading(true);
       const res = await API.get("/auth/google/url");
-      // If GOOGLE_CLIENT_ID is not yet configured in .env, use the development test profile
+      // If GOOGLE_CLIENT_ID is not yet configured in .env:
       if (!res.data?.url || res.data.url.includes("client_id=&") || !res.data.url.includes("client_id=")) {
-        const mockResult = await googleLogin({
-          credential: "mock_google_token_dr.john.smith@medicare-health.lk"
-        });
-        if (mockResult.user?.role === "patient") {
-          navigate("/patient/dashboard");
+        if (import.meta.env.DEV) {
+          const mockResult = await googleLogin({
+            credential: "mock_google_token_dr.john.smith@medicare-health.lk"
+          });
+          if (mockResult.user?.role === "patient") {
+            navigate("/patient/dashboard");
+          } else {
+            navigate("/home");
+          }
+          return;
         } else {
-          navigate("/home");
+          setError("Google Sign-In is not configured. Missing client ID.");
+          return;
         }
-        return;
       }
       window.location.href = res.data.url;
     } catch (err) {
-      // Development and offline evaluation fallback
-      try {
-        const mockResult = await googleLogin({
-          credential: "mock_google_token_dr.john.smith@medicare-health.lk"
-        });
-        if (mockResult.user?.role === "patient") {
-          navigate("/patient/dashboard");
-        } else {
-          navigate("/home");
+      if (import.meta.env.DEV) {
+        try {
+          const mockResult = await googleLogin({
+            credential: "mock_google_token_dr.john.smith@medicare-health.lk"
+          });
+          if (mockResult.user?.role === "patient") {
+            navigate("/patient/dashboard");
+          } else {
+            navigate("/home");
+          }
+          return;
+        } catch {
+          // Fall through
         }
-      } catch (mockErr) {
-        setError(err?.response?.data?.message || err.message || "Failed to initiate Google sign-in.");
       }
+      setError(err?.response?.data?.message || err.message || "Failed to initiate Google sign-in.");
     } finally {
       setGoogleLoading(false);
     }
