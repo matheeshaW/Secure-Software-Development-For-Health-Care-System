@@ -176,15 +176,52 @@ exports.updateDoctorProfile = async (req, res) => {
   }
 };
 
-// Search doctors by specialization
+// Search doctors by specialization (REMEDIATED: Defends against NoSQL Injection - CWE-943 / OWASP A03:2021)
 exports.searchDoctors = async (req, res) => {
   try {
+    // 1. Comprehensive NoSQL Injection Defense: Scan all query keys and values
+    for (const [key, val] of Object.entries(req.query)) {
+      if (key.includes("$") || key.includes("[") || key.includes("]")) {
+        return res.status(400).json({
+          success: false,
+          message: "Query parameter contains disallowed operator characters.",
+        });
+      }
+      if (typeof val === "object" && val !== null) {
+        return res.status(400).json({
+          success: false,
+          message: "Nested object query parameters are not permitted.",
+        });
+      }
+    }
+
     const { specialization, verified } = req.query;
 
     const filter = { isActive: true };
 
-    if (specialization) {
-      filter.specialization = specialization;
+    if (specialization !== undefined && specialization !== null) {
+      if (typeof specialization !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid specialization parameter. Expected a string.",
+        });
+      }
+
+      const trimmedSpecialization = specialization.trim();
+      if (
+        trimmedSpecialization.startsWith("$") ||
+        /[\$\{\}]/.test(trimmedSpecialization)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Specialization query contains disallowed operator characters.",
+        });
+      }
+
+      if (trimmedSpecialization.length > 0) {
+        filter.specialization = trimmedSpecialization;
+      }
     }
 
     if (verified === "true") {
@@ -193,7 +230,6 @@ exports.searchDoctors = async (req, res) => {
       filter.verified = false;
     } else if (verified === "all") {
       // Don't add verified filter - show ALL doctors
-      // (no filter.verified line)
     } else {
       filter.verified = true;
     }

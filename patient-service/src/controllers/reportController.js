@@ -47,7 +47,7 @@ exports.getReports = async (req, res) => {
   }
 };
 
-// Get reports for a specific patient (for doctors and other roles)
+// Get reports for a specific patient (enforcing strict object-level authorization)
 exports.getPatientReports = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -56,6 +56,25 @@ exports.getPatientReports = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Patient ID is required",
+      });
+    }
+
+    //  OBJECT-LEVEL AUTHORIZATION CHECK (Fix for V3 BOLA/IDOR)
+    // If requester is a patient, they are strictly restricted to their own records
+    if (req.user.role === "patient" && req.user.id !== patientId) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied. Patients can only access their own medical reports.",
+      });
+    }
+
+    // Only allow legitimate medical roles (patient, doctor, admin)
+    const authorizedRoles = ["patient", "doctor", "admin"];
+    if (!authorizedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Unauthorized role.",
       });
     }
 
