@@ -36,7 +36,7 @@ During the initial static baseline scan of `Healthcare-Microservices-System`, se
 
 ### Pre-Fix Scan:
 ```text
-❌ VULNERABILITY DETECTED: Found 9 instance(s) of hardcoded secrets!
+[ALERT] VULNERABILITY DETECTED: Found 9 instance(s) of hardcoded secrets!
 [Finding #1] [HIGH] Hardcoded Weak JWT Secret (CWE-798) - docker-compose.yml:41
 [Finding #2] [HIGH] Hardcoded Weak JWT Secret (CWE-798) - docker-compose.yml:60
 [Finding #3] [HIGH] Hardcoded Weak JWT Secret (CWE-798) - docker-compose.yml:76
