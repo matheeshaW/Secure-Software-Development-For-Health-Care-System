@@ -30,11 +30,63 @@ exports.createCheckoutSession = async (req, res) => {
   }
 };
 
-// 2. PROCESS PAYMENT (Triggers RabbitMQ)
+// 2. PROCESS PAYMENT (REMEDIATED: Defends against Price Tampering - CWE-20 / CWE-602 / OWASP A04:2021)
 exports.processPayment = async (req, res) => {
   try {
     const { appointmentId, patientId, patientEmail, amount, doctorId } =
       req.body;
+
+    // 1. Mandatory Input Validation
+    if (
+      !appointmentId ||
+      !patientId ||
+      !patientEmail ||
+      amount === undefined ||
+      amount === null
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Missing required payment fields: appointmentId, patientId, patientEmail, and amount are mandatory.",
+      });
+    }
+
+    // 2. Resolve requester identity and enforce patient ownership
+    let requester = null;
+    if (req.headers["x-user"]) {
+      try {
+        requester =
+          typeof req.headers["x-user"] === "string"
+            ? JSON.parse(req.headers["x-user"])
+            : req.headers["x-user"];
+      } catch (e) {
+        requester = null;
+      }
+    }
+    if (
+      requester &&
+      requester.role === "patient" &&
+      requester.id !== patientId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied. Cannot process payment on behalf of another patient.",
+      });
+    }
+
+    // 3. Authoritative Pricing Verification (Server-Side Price Validation)
+    const numericAmount = Number(amount);
+    const AUTHORIZED_CONSULTATION_FEE =
+      Number(process.env.STANDARD_CONSULTATION_FEE) || 2500;
+
+    if (isNaN(numericAmount) || numericAmount < AUTHORIZED_CONSULTATION_FEE) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment rejected: Provided amount (Rs. ${amount}) is below the authoritative consultation fee of Rs. ${AUTHORIZED_CONSULTATION_FEE}. Price tampering detected.`,
+      });
+    }
+
     const transactionId =
       "TXN_" + crypto.randomBytes(6).toString("hex").toUpperCase();
 
@@ -43,15 +95,14 @@ exports.processPayment = async (req, res) => {
       patientId,
       doctorId: doctorId || "DOC_PENDING",
       patientEmail,
-      amount,
+      amount: numericAmount,
       status: "success",
       transactionId,
     });
 
     await newPayment.save();
 
-    // --- NEW: SERVER-TO-SERVER COMMUNICATION ---
-    // Tell your teammate's Appointment Service (Port 5000) that the payment is done!
+    // Server-to-server notification to Appointment Service
     try {
       const appointmentServiceBaseUrl =
         process.env.APPOINTMENT_SERVICE_UPDATE_URL || "http://localhost:5000";
@@ -61,40 +112,38 @@ exports.processPayment = async (req, res) => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            // Forward the patient's JWT token so the Appointment Service accepts the request!
             Authorization: req.headers.authorization,
           },
         },
       );
 
       if (!appointmentResponse.ok) {
-        console.error("⚠️ Failed to update Appointment Service status");
+        console.error("[WARN] Failed to update Appointment Service status");
       } else {
         console.log(
-          "✅ Successfully notified Appointment Service to mark as Paid!",
+          "[INFO] Successfully notified Appointment Service to mark as Paid",
         );
       }
     } catch (fetchErr) {
       console.error(
-        "⚠️ Could not connect to Appointment Service:",
+        "[WARN] Could not connect to Appointment Service:",
         fetchErr.message,
       );
     }
-    // -------------------------------------------
 
-    // Trigger the Notification Service
+    // Trigger notification service
     try {
       await sendNotification({
         patientEmail: patientEmail,
-        message: `Success! Payment of Rs. ${amount} received. TXN: ${transactionId}.`,
+        message: `Success! Payment of Rs. ${numericAmount} received. TXN: ${transactionId}.`,
       });
     } catch (rabbitErr) {
       console.error("RabbitMQ Notification failed");
     }
 
-    res.status(200).json({ success: true, transactionId });
+    return res.status(200).json({ success: true, transactionId });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 
