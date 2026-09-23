@@ -10,3 +10,8 @@ export const deleteMyAccount = (data) =>
   API.delete("/user/me", {
     data,
   });
+
+export const loginWithGoogle = (payload) => API.post("/auth/google", payload);
+
+export const getGoogleAuthUrl = () => API.get("/auth/google/url");
+

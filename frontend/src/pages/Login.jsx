@@ -1,6 +1,7 @@
 import { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import API from "../api/axios";
 
 /* ── Floating particle background ── */
 function HealthBg() {
@@ -202,8 +203,9 @@ function Login() {
   const [loading, setLoading]   = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  const { login }   = useContext(AuthContext);
+  const { login, googleLogin }   = useContext(AuthContext);
   const navigate    = useNavigate();
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
@@ -214,6 +216,27 @@ function Login() {
       setError(err?.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setError("");
+      setGoogleLoading(true);
+      const res = await API.get("/auth/google/url");
+      if (res.data && res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        throw new Error("Failed to generate Google authorization URL.");
+      }
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+        err.message ||
+        "Failed to initiate Google sign-in."
+      );
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -495,10 +518,42 @@ function Login() {
 
         .hc-divider {
           display: flex; align-items: center; gap: 12px;
-          margin: 4px 0;
+          margin: 6px 0;
         }
-        .hc-divider-line { flex:1; height:1px; background:#f1f5f9; }
-        .hc-divider-text { font-size:11px; color:#cbd5e1; letter-spacing:.04em; }
+        .hc-divider-line { flex:1; height:1px; background:#e2e8f0; }
+        .hc-divider-text { font-size:11px; color:#94a3b8; letter-spacing:.06em; font-weight:600; }
+
+        .hc-google-btn {
+          width: 100%;
+          padding: 11px 16px;
+          border-radius: 12px;
+          border: 1.5px solid #e2e8f0;
+          background: #ffffff;
+          color: #1e293b;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .hc-google-btn:hover:not(:disabled) {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .hc-google-btn:active:not(:disabled) {
+          transform: translateY(0);
+        }
+        .hc-google-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
 
         .hc-footer {
           margin-top: 22px; font-size: 13px; color: #94a3b8;
@@ -627,8 +682,41 @@ function Login() {
                 </div>
               </div>
 
-              <button className="hc-btn" onClick={handleLogin} disabled={loading}>
+              <button className="hc-btn" onClick={handleLogin} disabled={loading || googleLoading}>
                 {loading ? "Signing in…" : "Sign In →"}
+              </button>
+
+              <div className="hc-divider">
+                <div className="hc-divider-line" />
+                <span className="hc-divider-text">OR</span>
+                <div className="hc-divider-line" />
+              </div>
+
+              <button
+                type="button"
+                className="hc-google-btn"
+                onClick={handleGoogleLogin}
+                disabled={loading || googleLoading}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.27 21.37 7.34 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.27 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                  />
+                </svg>
+                <span>{googleLoading ? "Connecting to Google…" : "Sign in with Google"}</span>
               </button>
             </div>
 
