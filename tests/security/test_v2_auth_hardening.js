@@ -20,7 +20,7 @@ function analyzeAuthControllerSource() {
   console.log('================================================================\n');
 
   if (!fs.existsSync(AUTH_CONTROLLER_PATH)) {
-    console.error('❌ File not found:', AUTH_CONTROLLER_PATH);
+    console.error('[ERROR] File not found:', AUTH_CONTROLLER_PATH);
     process.exit(1);
   }
 
