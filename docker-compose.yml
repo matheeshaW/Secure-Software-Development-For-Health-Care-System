@@ -6,8 +6,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-password}
     volumes:
       - mongo_data:/data/db
     networks:
@@ -20,8 +20,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -37,8 +37,8 @@ services:
       - "5001:5001"
     environment:
       PORT: 5001
-      MONGO_URI: mongodb://admin:password@mongodb:27017/patient-service?authSource=admin
-      JWT_SECRET: supersecretkey
+      MONGO_URI: ${PATIENT_MONGO_URI:-mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-password}@mongodb:27017/patient-service?authSource=admin}
+      JWT_SECRET: ${JWT_SECRET}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
@@ -59,8 +59,8 @@ services:
       - "5002:5002"
     environment:
       PORT: 5002
-      MONGO_URI: mongodb://admin:password@mongodb:27017/doctor-service?authSource=admin
-      JWT_SECRET: supersecretkey
+      MONGO_URI: ${DOCTOR_MONGO_URI:-mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-password}@mongodb:27017/doctor-service?authSource=admin}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - mongodb
     networks:
@@ -75,8 +75,8 @@ services:
       - "5003:5003"
     environment:
       PORT: 5003
-      MONGO_URI: mongodb://admin:password@mongodb:27017/appointment-service?authSource=admin
-      JWT_SECRET: supersecretkey
+      MONGO_URI: ${APPOINTMENT_MONGO_URI:-mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-password}@mongodb:27017/appointment-service?authSource=admin}
+      JWT_SECRET: ${JWT_SECRET}
       DOCTOR_SERVICE_URL: http://doctor-service:5002
       DOCTOR_ME_PATH: /api/doctors/me
       DOCTOR_AVAILABILITY_PATH: /api/availability/doctor/:doctorId
@@ -100,7 +100,7 @@ services:
       - "5005:5005"
     environment:
       PORT: 5005
-      MONGO_URI: mongodb+srv://admin:1234@cluster0.c6a4y.mongodb.net/healthcare
+      MONGO_URI: ${PAYMENT_MONGO_URI:-mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-password}@mongodb:27017/payment-service?authSource=admin}
       RABBITMQ_URL: amqp://rabbitmq:5672
       # This looks for the key in your .env file
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -119,10 +119,10 @@ services:
       - "5004:5004"
     environment:
       PORT: 5004
-      MONGO_URI: mongodb+srv://admin:1234@cluster0.c6a4y.mongodb.net/healthcare
+      MONGO_URI: ${NOTIFICATION_MONGO_URI:-mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-password}@mongodb:27017/notification-service?authSource=admin}
       RABBITMQ_URL: amqp://rabbitmq:5672
-      EMAIL_USER: warurandima6@gmail.com
-      EMAIL_PASS: "pqcg bppq drkp hbta"
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
     depends_on:
       - mongodb
       - rabbitmq
@@ -138,7 +138,7 @@ services:
       - "5006:5006"
     environment:
       PORT: 5006
-      MONGO_URI: mongodb://admin:password@mongodb:27017/telemedicine-service?authSource=admin
+      MONGO_URI: ${TELEMEDICINE_MONGO_URI:-mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-password}@mongodb:27017/telemedicine-service?authSource=admin}
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       JITSI_BASE_URL: https://meet.jit.si
     depends_on:
@@ -156,7 +156,7 @@ services:
       - "5000:5000"
     environment:
       PORT: 5000
-      JWT_SECRET: supersecretkey
+      JWT_SECRET: ${JWT_SECRET}
       PATIENT_SERVICE_URL: http://patient-service:5001
       DOCTOR_SERVICE_URL: http://doctor-service:5002
       APPOINTMENT_SERVICE_URL: http://appointment-service:5003
