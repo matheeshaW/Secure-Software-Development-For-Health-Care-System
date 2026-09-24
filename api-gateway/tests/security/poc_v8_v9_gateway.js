@@ -265,8 +265,13 @@ async function runSecurityPoC() {
     console.log();
 
   } finally {
-    console.log("[*] Shutting down test Gateway instance...");
-    serverProcess.kill();
+    if (process.argv.includes("--serve")) {
+      console.log("[*] --serve flag detected: Keeping patched Gateway active on port " + TEST_PORT + " for Postman screenshots...");
+      console.log("[*] Press Ctrl+C when finished capturing screenshots.");
+    } else {
+      console.log("[*] Shutting down test Gateway instance...");
+      serverProcess.kill();
+    }
   }
 
   /* -------------------------------------------------------------
