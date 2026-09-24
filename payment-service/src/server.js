@@ -39,7 +39,7 @@ async function startServer() {
             console.log(`Payment Service running on port ${PORT}`);
         });
     } catch (err) {
-        console.error('❌ Failed to start Payment Service:', err);
+        console.error('[ERROR] Failed to start Payment Service:', err);
         process.exit(1); 
     }
 }
